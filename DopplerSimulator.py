@@ -1,5 +1,5 @@
 import numpy as _np
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as _plt
 import tkinter as tk
 from scipy.io import wavfile
 import pygame
@@ -14,8 +14,8 @@ class DopplerSimulator:
         self._sound_velocity = self._sound_velocity_calculator()
 
     def _sound_velocity_calculator(self): # calculates the sound velocity in a predetermined medium
-        sound_velocity = self._ccp * self._ugc * self.temperature
-        sound_velocity /= self.mol_mass
+        sound_velocity = self._ccp * self._ugc * self._temperature
+        sound_velocity /= self._mol_mass
         sound_velocity = _np.sqrt(sound_velocity)
         return sound_velocity
     
@@ -23,23 +23,28 @@ class DopplerSimulator:
     def sound_velocity(self):
         return self._sound_velocity
     
-    @property.setter
+    @sound_velocity.setter
     def set_sound_velocity(self, ccp, ugc, temperature, molar_mass):
         new_sound_velocity = ccp * ugc * temperature
         new_sound_velocity /= molar_mass
         self._sound_velocity = _np.sqrt(new_sound_velocity)
+
+    def _time_elapsed_calculator(self, final_time):
+        time_elapsed = _np.linspace(0, final_time)
+
+        return time_elapsed
+
     
-    def _beholder_and_source_velocity(self, final_time,
+    def _beholder_and_source_velocity(self, time_elapsed,
                                 linear_coef, angular_coef=0):
         """This method supports only MU and MUV"""
-        time_elapsed = _np.linspace(0, final_time)
         size_time_array = time_elapsed.size
         ones = _np.ones(size_time_array)
         velocity = angular_coef * time_elapsed + linear_coef * ones
 
         return velocity
     
-    def frequency_calculator(self, f0, 
+    def _frequencyMUV_calculator(self, f0, 
                              beholder_velocity, source_velocity, 
                              distance_increases, same_direction):
         """This method works only if the velocities are positive"""
@@ -57,12 +62,38 @@ class DopplerSimulator:
         fixed_frequency /= denominator
         
         return fixed_frequency
+    
+    def doppler_graphic_generator(self, f0, beholder_linear_coef, 
+                                  beholder_ang_coef,source_linear_coef, 
+                                  source_ang_coef, final_time, 
+                                  distance_increases, same_direction):
+        
+        time_elapsed = self._time_elapsed_calculator(final_time)
+
+        source_velocity = self._beholder_and_source_velocity(time_elapsed,
+                                        source_linear_coef, source_ang_coef)
+        
+        beholder_velocity = self._beholder_and_source_velocity(time_elapsed,
+                                    beholder_linear_coef, beholder_ang_coef)
+
+        fixed_frequencies = self._frequencyMUV_calculator(f0,
+                                        beholder_velocity,source_velocity,
+                                        distance_increases, same_direction)
+        
+
+        ax, fig = _plt.subplots(figsize=(12,7))
+        ax.title("Gráfico da frequência aparente")
+
+        ax.plot(time_elapsed, fixed_frequencies, color="black")
+        ax.tick_params(axis="both", labelsize=15)
+        ax.set_xlabel(r"Tempo transcorrido ($s$)", fontsize=16)
+        ax.set_ylabel(r"Frequência observada ($Hz$)", fontsize=16)
 
     def screen_dimensions(self):
         root = tk.Tk()
         screen_width = root.winfo_screenwidth()
         screen_height = root.winfo_screenheight()
-        root.destroy
+        root.destroy()
 
         return screen_width, screen_height
 
