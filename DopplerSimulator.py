@@ -55,8 +55,8 @@ class DopplerSimulator:
         if not same_direction:
             beholder_velocity = -beholder_velocity
 
-        numerator = self.sound_velocity() + source_velocity
-        denominator = self.sound_velocity() + beholder_velocity 
+        numerator = self.sound_velocity + source_velocity
+        denominator = self.sound_velocity + beholder_velocity 
 
         fixed_frequency = f0*numerator
         fixed_frequency /= denominator
@@ -81,10 +81,10 @@ class DopplerSimulator:
                                         distance_increases, same_direction)
         
 
-        ax, fig = _plt.subplots(figsize=(12,7))
-        ax.title("Gráfico da frequência aparente")
+        fig, ax = _plt.subplots(figsize=(12,7))
+        ax.set_title("Gráfico da frequência aparente", fontsize=18)
 
-        ax.plot(time_elapsed, fixed_frequencies, color="black")
+        ax.plot(time_elapsed, fixed_frequencies, color="blue")
         ax.tick_params(axis="both", labelsize=15)
         ax.set_xlabel(r"Tempo transcorrido ($s$)", fontsize=16)
         ax.set_ylabel(r"Frequência observada ($Hz$)", fontsize=16)
