@@ -110,7 +110,6 @@ class DopplerSimulator:
 
         return screen
 
-
     def set_background_image(self, screen_width, screen_height, screen):
         background_image = pygame.image.load("road-image.jpg")
         background_image = pygame.transform.scale(background_image, (screen_width, screen_height))
@@ -130,22 +129,26 @@ class DopplerSimulator:
         pygame.display.flip()
         pygame.time.Clock().tick(60)
 
+    def image_increment_calculator(self, image_index, size_array_image):
+        if image_index == size_array_image-1:
+            return 0
+        else:
+            return image_index + 1
+
     def car_position_reset(self, x_car, count, screen_width,
-                        instant_source_speed):
+                        instant_source_speed, image_index, size_array_image):
         positive_direction_end = instant_source_speed > 0 and x_car[count] > screen_width
         negative_direction_end = instant_source_speed < 0 and x_car[count] < -450
+        index = self.image_increment_calculator(image_index, size_array_image)
 
         if positive_direction_end:
-            return 0
+            return 0, index
         elif negative_direction_end:
-            return _np.argmin(_np.abs(x_car - screen_width))
+            return _np.argmin(_np.abs(x_car - screen_width)), index
         
-        return count
-
-    def create_doppler_animation(self, character, car, instant_source_speed):
-
-        self.on_off_simulation(on_button=True)
-
+        return count, index - 1
+    
+    def return_params(self, instant_source_speed):
         screen_width, screen_height = self.screen_dimensions()
         screen = self.screen_element(screen_width, screen_height)
 
@@ -153,7 +156,19 @@ class DopplerSimulator:
         time_elapsed = _np.linspace(-50, screen_width, 1000)
         x_car = instant_source_speed * time_elapsed
 
-        count=0
+        return screen, screen_width, screen_height, x_char, y_char, x_car
+
+
+    def create_doppler_animation(self, character, vehicles_array, instant_source_speed):
+
+        self.on_off_simulation(on_button=True)
+        screen, screen_width, screen_height, x_char, y_char, x_car = self.return_params(instant_source_speed)
+    
+        image_index, count, correction_factor  = 0, 0, 1
+        if instant_source_speed < 0:
+            correction_factor = -1
+
+        array_size = vehicles_array.size
         keepGoing = True
 
         while keepGoing:
@@ -162,14 +177,16 @@ class DopplerSimulator:
                     keepGoing = False
 
             self.set_background_image(screen_width, screen_height, screen)
+            count, image_index = self.car_position_reset(correction_factor* x_car, count, 
+                                                         screen_width, instant_source_speed, 
+                                                         image_index, array_size)
+            self.pygame_render(screen, character, 
+                               vehicles_array[image_index], x_char, y_char,
+                               correction_factor * x_car[count], 0.65*screen_height)
             
             if instant_source_speed > 0:
-                count = self.car_position_reset(x_car, count, screen_width, instant_source_speed)
-                self.pygame_render(screen, character, car, x_char, y_char, x_car[count], 0.65*screen_height)
                 count+=1
             else:
-                count = self.car_position_reset(-x_car, count, screen_width, instant_source_speed)
-                self.pygame_render(screen, character, car, x_char, y_char, -x_car[count], 0.65*screen_height)
                 count-=1
 
         self.on_off_simulation(on_button=False)  
